@@ -653,6 +653,7 @@ int main(int argc, char **argv)
 
             control_msgs::JointTrajectoryControllerState jtcs;
             jtcs.header.stamp = js.header.stamp;
+	    jtcs.joint_names = js.name;
             jtcs.actual.positions = js.position;
             jtcs.actual.velocities = js.velocity;
             jtcs.desired.positions = desired_positions;//dg.second.getDesiredPos();
