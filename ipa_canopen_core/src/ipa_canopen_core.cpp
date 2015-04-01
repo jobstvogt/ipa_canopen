@@ -876,13 +876,27 @@ std::function< void (uint16_t CANid, double positionValue, double velocityValue)
 
 void defaultPDOOutgoing_interpolated(uint16_t CANid, double positionValue)
 {
+
+    std::string component_name_check ("pg70");
+    std::string real_name = devices[CANid].getName();
+
+    
     static const uint16_t myControlword = (CONTROLWORD_ENABLE_OPERATION | CONTROLWORD_ENABLE_IP_MODE);
     TPCANMsg msg;
     std::memset(&msg, 0, sizeof(msg));
     msg.ID = 0x300 + CANid;
     msg.MSGTYPE = 0x00;
     msg.LEN = 4;
-    int32_t mdegPos = rad2mdeg(positionValue);
+    int32_t mdegPos;
+    if (real_name.find(component_name_check) == std::string::npos)
+    //if (CANid!=12)  
+    {
+        mdegPos = rad2mdeg(positionValue);
+     }
+     else{
+        mdegPos =2000000*(positionValue);
+     }
+    
     msg.DATA[0] = mdegPos & 0xFF;
     msg.DATA[1] = (mdegPos >> 8) & 0xFF;
     msg.DATA[2] = (mdegPos >> 16) & 0xFF;
@@ -892,6 +906,10 @@ void defaultPDOOutgoing_interpolated(uint16_t CANid, double positionValue)
 
 void defaultPDOOutgoing(uint16_t CANid, double positionValue)
 {
+
+    std::string component_name_check ("pg70");
+    std::string real_name = devices[CANid].getName();
+
     static const uint16_t myControlword = (CONTROLWORD_ENABLE_OPERATION | CONTROLWORD_ENABLE_IP_MODE);
     TPCANMsg msg;
     std::memset(&msg, 0, sizeof(msg));
@@ -902,7 +920,15 @@ void defaultPDOOutgoing(uint16_t CANid, double positionValue)
     msg.DATA[1] = (myControlword >> 8) & 0xFF;
     msg.DATA[2] = 0x00;
     msg.DATA[3] = 0x00;
-    int32_t mdegPos = rad2mdeg(positionValue);
+    int32_t mdegPos;
+    if (real_name.find(component_name_check) == std::string::npos)
+    //if (CANid!=12)  
+    {
+        mdegPos = rad2mdeg(positionValue);
+    }
+    else{
+        mdegPos =2000000*(positionValue);
+    }
     msg.DATA[4] = mdegPos & 0xFF;
     msg.DATA[5] = (mdegPos >> 8) & 0xFF;
     msg.DATA[6] = (mdegPos >> 16) & 0xFF;
@@ -1038,9 +1064,19 @@ void defaultPDO_incoming_status(uint16_t CANid, const TPCANRdMsg m)
 
 void defaultPDO_incoming_pos(uint16_t CANid, const TPCANRdMsg m)
 {
-    double newPos = mdeg2rad(m.Msg.DATA[0] + (m.Msg.DATA[1] << 8) + (m.Msg.DATA[2] << 16) + (m.Msg.DATA[3] << 24));
-    double newVel = mdeg2rad(m.Msg.DATA[4] + (m.Msg.DATA[5] << 8) + (m.Msg.DATA[6] << 16) + (m.Msg.DATA[7] << 24));
-
+    std::string component_name_check ("pg70");
+    std::string real_name = devices[CANid].getName();
+    double newPos;
+    //if (real_name.find(component_name_check) == std::string::npos) 
+    if(CANid!=12)
+    {
+        newPos = mdeg2rad(m.Msg.DATA[0] + (m.Msg.DATA[1] << 8) + (m.Msg.DATA[2] << 16) + (m.Msg.DATA[3] << 24));
+        double newVel = mdeg2rad(m.Msg.DATA[4] + (m.Msg.DATA[5] << 8) + (m.Msg.DATA[6] << 16) + (m.Msg.DATA[7] << 24));
+     }
+     else{
+        newPos = 0.0000005 * (m.Msg.DATA[0] + (m.Msg.DATA[1] << 8) + (m.Msg.DATA[2] << 16) + (m.Msg.DATA[3] << 24));
+        double newVel = 0.0000005 * (m.Msg.DATA[4] + (m.Msg.DATA[5] << 8) + (m.Msg.DATA[6] << 16) + (m.Msg.DATA[7] << 24));
+     }
     //newPos = devices[CANid].getConversionFactor()*newPos; //TODO: conversion from yaml file
     //newVel = devices[CANid].getConversionFactor()*newVel;
 
@@ -1067,6 +1103,22 @@ void defaultPDO_incoming_pos(uint16_t CANid, const TPCANRdMsg m)
 }
 void defaultPDO_incoming(uint16_t CANid, const TPCANRdMsg m)
 {
+
+    std::string component_name_check ("pg70");
+    std::string real_name = devices[CANid].getName();
+   
+
+    //if (real_name.find(component_name_check) == std::string::npos)
+    if (CANid!=12)  
+    {
+        double newPos = mdeg2rad(m.Msg.DATA[0] + (m.Msg.DATA[1] << 8) + (m.Msg.DATA[2] << 16) + (m.Msg.DATA[3] << 24));
+        double newVel = mdeg2rad(m.Msg.DATA[4] + (m.Msg.DATA[5] << 8) + (m.Msg.DATA[6] << 16) + (m.Msg.DATA[7] << 24));
+     }
+     else{
+        double newPos = 0.0000005 * (m.Msg.DATA[0] + (m.Msg.DATA[1] << 8) + (m.Msg.DATA[2] << 16) + (m.Msg.DATA[3] << 24));
+        double newVel = 0.0000005 * (m.Msg.DATA[4] + (m.Msg.DATA[5] << 8) + (m.Msg.DATA[6] << 16) + (m.Msg.DATA[7] << 24));
+     }
+     
     double newPos = mdeg2rad(m.Msg.DATA[4] + (m.Msg.DATA[5] << 8) + (m.Msg.DATA[6] << 16) + (m.Msg.DATA[7] << 24) );
 
     if (devices[CANid].getTimeStamp_msec() != std::chrono::milliseconds(0) || devices[CANid].getTimeStamp_usec() != std::chrono::microseconds(0))
